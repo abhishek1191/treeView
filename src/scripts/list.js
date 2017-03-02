@@ -7,6 +7,8 @@ let selectedItems = [];
 //let checkBoxes = [];
 let ctrlPressed = false;
 
+let sourceMap = new Map();
+
 let treeViewSource = {
     "source": "AGROSTAR",
     "children": [
@@ -84,9 +86,11 @@ document.body.appendChild(result);
     checkBox.id = "cbx"+sourceTree.source;
     li.appendChild(checkBox);
 
+
     // checkBoxes.push(checkBox);
 
     if (sourceTree.children && sourceTree.children.length > 0) {
+        sourceMap.set(sourceTree.source, sourceTree.children.map(child => child.source));
         let ul = document.createElement('ul');
         ul.style.listStyle = 'none';
         ul.id = sourceTree.source;
@@ -117,6 +121,8 @@ document.body.appendChild(result);
 
 })(treeViewSource, ul);
 
+console.log(sourceMap);
+let checkBoxNodes = document.getElementsByName("sourceElement");
 
 // adding events to checkbox buttons and DOM.
 
@@ -141,10 +147,13 @@ document.addEventListener("DOMContentLoaded", function (event) {
 //On check box click, push and pop item(s) from selected items
 function handleCheckBoxClick(event) {
     if (event.target.checked) {
-        selectedItems.push(event.target.value);
+       insertSelectedItems(event.target.value);
 
     } else {
-        selectedItems.splice(selectedItems.indexOf(event.target.value), 1);
+        removeSelectedItems(event.target.value);
+        // if(selectedItems.indexOf(event.target.value) >= 0){
+        //     selectedItems.splice(selectedItems.indexOf(event.target.value), 1);
+        // }
     }
 
     result.innerHTML = "";
@@ -161,13 +170,20 @@ function handleKeyDown(event) {
         ctrlPressed = true;
     }
     if (ctrlPressed && event.keyCode === 65) {
-        selectedItems = [];
-        let checkBoxes = document.getElementsByName("sourceElement");
-        checkBoxes.forEach(checkBox => {
-            checkBox.checked = true;
-            checkBox.setAttribute("checked", "true");
-            selectedItems.push(checkBox.value);
-        });
+        let keys = sourceMap.keys();
+        for(let key of keys){
+            insertSelectedItems(key);
+        }
+        // selectedItems = [];
+        // let checkBoxes = document.getElementsByName("sourceElement");
+        // checkBoxes.forEach(checkBox => {
+        //     checkBox.checked = true;
+        //     checkBox.setAttribute("checked", "true");
+        //     if(!sourceMap.get(checkBox.value)){
+        //         selectedItems.push(checkBox.value);
+        //     }
+        //
+        // });
         result.innerHTML = "";
         result.innerHTML = "Selected Items : " + selectedItems.join(",");
     }
@@ -179,4 +195,43 @@ function handleKeyUp(event) {
         ctrlPressed = false;
     }
 }
+
+function insertSelectedItems(value) {
+    let children = sourceMap.get(value);
+
+    setItemCheckBox(value,true);
+
+    if(children && children.length >0){
+        children.forEach(child => insertSelectedItems(child));
+    }
+    else{
+        if(selectedItems.indexOf(value) === -1){
+            selectedItems.push(value);
+        }
+    }
+}
+
+function setItemCheckBox(value,selected){
+        checkBoxNodes.forEach(checkBox =>{
+            if(checkBox.value == value){
+                checkBox.checked = selected;
+            }
+        });
+}
+
+function removeSelectedItems(value) {
+    let children = sourceMap.get(value);
+
+    setItemCheckBox(value,false);
+
+    if(children && children.length >0){
+        children.forEach(child => removeSelectedItems(child));
+    }
+    else{
+        if(selectedItems.indexOf(value) >= 0){
+            selectedItems.splice(selectedItems.indexOf(value), 1);
+        }
+    }
+}
+
 
